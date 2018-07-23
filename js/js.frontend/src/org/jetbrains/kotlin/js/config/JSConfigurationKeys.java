@@ -17,6 +17,7 @@
 package org.jetbrains.kotlin.js.config;
 
 import org.jetbrains.kotlin.config.CompilerConfigurationKey;
+import org.jetbrains.kotlin.incremental.js.JsIncrementalCompilationSettings;
 import org.jetbrains.kotlin.incremental.js.IncrementalDataProvider;
 import org.jetbrains.kotlin.incremental.js.IncrementalResultsConsumer;
 import org.jetbrains.kotlin.serialization.js.ModuleKind;
@@ -60,6 +61,9 @@ public class JSConfigurationKeys {
 
     public static final CompilerConfigurationKey<IncrementalResultsConsumer> INCREMENTAL_RESULTS_CONSUMER =
             CompilerConfigurationKey.create("incremental results consumer");
+
+    public static final CompilerConfigurationKey<JsIncrementalCompilationSettings> JS_INCREMENTAL_COMPILATION_SETTINGS =
+            CompilerConfigurationKey.create("js incremental compilation settings");
 
     public static final CompilerConfigurationKey<Boolean> FRIEND_PATHS_DISABLED =
             CompilerConfigurationKey.create("disable support for friend paths");

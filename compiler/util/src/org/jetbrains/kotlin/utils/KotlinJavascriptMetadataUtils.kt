@@ -22,7 +22,12 @@ import java.io.File
 import java.io.InputStream
 import java.util.*
 
-class KotlinJavascriptMetadata(val version: JsMetadataVersion, val moduleName: String, val body: ByteArray)
+class KotlinJavascriptMetadata(
+    val version: JsMetadataVersion,
+    val moduleName: String,
+    val body: ByteArray,
+    val archive: File? = null
+)
 
 // TODO: move to JS modules
 class JsMetadataVersion(vararg numbers: Int) : BinaryVersion(*numbers) {
@@ -80,7 +85,7 @@ object KotlinJavascriptMetadataUtils {
         assert(file.exists()) { "Library $file not found" }
         val metadataList = arrayListOf<KotlinJavascriptMetadata>()
         JsLibraryUtils.traverseJsLibrary(file) { library ->
-            parseMetadata(library.content, metadataList)
+            parseMetadata(library.content, metadataList, archive = library.archive)
         }
 
         return metadataList
@@ -90,7 +95,7 @@ object KotlinJavascriptMetadataUtils {
     fun loadMetadata(path: String): List<KotlinJavascriptMetadata> = loadMetadata(File(path))
 
     @JvmStatic
-    fun parseMetadata(text: CharSequence, metadataList: MutableList<KotlinJavascriptMetadata>) {
+    fun parseMetadata(text: CharSequence, metadataList: MutableList<KotlinJavascriptMetadata>, archive: File? = null) {
         // Check for literal pattern first in order to reduce time for large files without metadata
         if (!KOTLIN_JAVASCRIPT_METHOD_NAME_PATTERN.matcher(text).find()) return
 
@@ -99,7 +104,7 @@ object KotlinJavascriptMetadataUtils {
             val abiVersion = JsMetadataVersion.fromInteger(matcher.group(1).toInt())
             val moduleName = matcher.group(3)
             val data = matcher.group(5)
-            metadataList.add(KotlinJavascriptMetadata(abiVersion, moduleName, Base64.getDecoder().decode(data)))
+            metadataList.add(KotlinJavascriptMetadata(abiVersion, moduleName, Base64.getDecoder().decode(data), archive))
         }
     }
 }

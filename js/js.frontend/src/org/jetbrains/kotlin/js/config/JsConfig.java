@@ -30,6 +30,7 @@ import org.jetbrains.kotlin.config.*;
 import org.jetbrains.kotlin.descriptors.PackageFragmentProvider;
 import org.jetbrains.kotlin.descriptors.impl.ModuleDescriptorImpl;
 import org.jetbrains.kotlin.incremental.components.LookupTracker;
+import org.jetbrains.kotlin.incremental.js.JsIncrementalCompilationSettings;
 import org.jetbrains.kotlin.js.resolve.JsPlatform;
 import org.jetbrains.kotlin.name.Name;
 import org.jetbrains.kotlin.resolve.CompilerDeserializationConfiguration;
@@ -309,7 +310,18 @@ public class JsConfig {
                     Name.special("<" + m.getModuleName() + ">"), storageManager, JsPlatform.INSTANCE.getBuiltIns()
             );
 
+
+
             LookupTracker lookupTracker = configuration.get(CommonConfigurationKeys.LOOKUP_TRACKER, LookupTracker.DO_NOTHING.INSTANCE);
+            JsIncrementalCompilationSettings jsIncrementalCompilationSettings = configuration.get(JSConfigurationKeys.JS_INCREMENTAL_COMPILATION_SETTINGS);
+            if (jsIncrementalCompilationSettings != null) {
+                Set<File> ignoreLookupsFrom = jsIncrementalCompilationSettings.getIgnoreLookupsFrom();
+                File fileOrArchive = metadata.getArchive();
+                if (fileOrArchive != null && ignoreLookupsFrom.contains(fileOrArchive)) {
+                    lookupTracker = LookupTracker.DO_NOTHING.INSTANCE;
+                }
+            }
+
             KotlinJavaScriptLibraryParts parts = KotlinJavascriptSerializationUtil.readModuleAsProto(m.getBody(), m.getVersion());
             PackageFragmentProvider provider = KotlinJavascriptPackageFragmentProviderKt.createKotlinJavascriptPackageFragmentProvider(
                     storageManager, moduleDescriptor, parts.getHeader(), parts.getBody(), m.getVersion(),

@@ -68,7 +68,8 @@ class IncrementalJsCompilerRunner(
         cacheVersions: List<CacheVersion>,
         reporter: ICReporter,
         buildHistoryFile: File,
-        private val modulesApiHistory: ModulesApiHistory
+        private val modulesApiHistory: ModulesApiHistory,
+        private val jarFilesToTrack: Set<File> = emptySet()
 ) : IncrementalCompilerRunner<K2JSCompilerArguments, IncrementalJsCachesManager>(
         workingDir,
         "caches-js",
@@ -123,6 +124,11 @@ class IncrementalJsCompilerRunner(
         compilationMode: CompilationMode
     ): Services.Builder =
         super.makeServices(args, lookupTracker, expectActualTracker, caches, compilationMode).apply {
+            val libraries = args.libraries?.split(File.pathSeparator)?.map { File(it) } ?: emptyList()
+            val jsICSettings = JsIncrementalCompilationSettingsImpl(ignoreLookupsFrom = libraries.toSet() - jarFilesToTrack)
+
+            register(JsIncrementalCompilationSettings::class.java, jsICSettings)
+
             register(IncrementalResultsConsumer::class.java, IncrementalResultsConsumerImpl())
 
             if (compilationMode is CompilationMode.Incremental) {

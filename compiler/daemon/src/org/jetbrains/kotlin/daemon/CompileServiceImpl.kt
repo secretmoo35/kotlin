@@ -482,7 +482,8 @@ class CompileServiceImpl(
             cacheVersions = versions,
             reporter = reporter,
             buildHistoryFile = incrementalCompilationOptions.multiModuleICSettings.buildHistoryFile,
-            modulesApiHistory = modulesApiHistory
+            modulesApiHistory = modulesApiHistory,
+            jarFilesToTrack = incrementalCompilationOptions.modulesInfo.jarToModule.keys
         )
         return compiler.compile(allKotlinFiles, args, compilerMessageCollector, changedFiles)
     }

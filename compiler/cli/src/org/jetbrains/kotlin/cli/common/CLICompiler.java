@@ -182,7 +182,7 @@ public abstract class CLICompiler<A extends CommonCompilerArguments> extends CLI
     }
 
     @Nullable
-    private static KotlinPaths computeKotlinPaths(@NotNull MessageCollector messageCollector, @NotNull CommonCompilerArguments arguments) {
+    static KotlinPaths computeKotlinPaths(@NotNull MessageCollector messageCollector, @NotNull CommonCompilerArguments arguments) {
         KotlinPaths paths;
         String kotlinHomeProperty = System.getProperty(KOTLIN_HOME_PROPERTY);
         File kotlinHome =
