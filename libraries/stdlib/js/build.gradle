@@ -353,9 +353,9 @@ dist {
         rename("dist-", "")
         from(it)
         // legacy
-        from(it) {
-            rename("kotlin-stdlib-js", 'kotlin-jslib')
-        }
+//        from(it) {
+//            rename("kotlin-stdlib-js", 'kotlin-jslib')
+//        }
     }
 }
 
