@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2018 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license
+ * Copyright 2010-2018 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license
  * that can be found in the license/LICENSE.txt file.
  */
 
@@ -57,10 +57,12 @@ import java.io.PrintWriter
 import java.io.StringWriter
 import java.util.*
 
+@JvmOverloads
 fun generateIsCheck(
     v: InstructionAdapter,
     kotlinType: KotlinType,
-    asmType: Type
+    asmType: Type,
+    isReleaseCoroutines: Boolean = false
 ) {
     if (TypeUtils.isNullableType(kotlinType)) {
         val nope = Label()
@@ -71,7 +73,7 @@ fun generateIsCheck(
 
             ifnull(nope)
 
-            TypeIntrinsics.instanceOf(this, kotlinType, asmType)
+            TypeIntrinsics.instanceOf(this, kotlinType, asmType, isReleaseCoroutines)
 
             goTo(end)
 
@@ -82,15 +84,17 @@ fun generateIsCheck(
             mark(end)
         }
     } else {
-        TypeIntrinsics.instanceOf(v, kotlinType, asmType)
+        TypeIntrinsics.instanceOf(v, kotlinType, asmType, isReleaseCoroutines)
     }
 }
 
+@JvmOverloads
 fun generateAsCast(
     v: InstructionAdapter,
     kotlinType: KotlinType,
     asmType: Type,
-    isSafe: Boolean
+    isSafe: Boolean,
+    isReleaseCoroutines: Boolean = false
 ) {
     if (!isSafe) {
         if (!TypeUtils.isNullableType(kotlinType)) {
@@ -99,7 +103,7 @@ fun generateAsCast(
     } else {
         with(v) {
             dup()
-            TypeIntrinsics.instanceOf(v, kotlinType, asmType)
+            TypeIntrinsics.instanceOf(v, kotlinType, asmType, isReleaseCoroutines)
             val ok = Label()
             ifne(ok)
             pop()
