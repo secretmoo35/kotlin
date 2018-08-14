@@ -11,7 +11,7 @@ sourceSets {
     "test" {}
 }
 
-project.addPrePushHookIfMissing()
+//project.addPrePushHookIfMissing()
 
 fun Project.addPrePushHookIfMissing() {
     val dotGitDirectory = rootProject.getGitDirectory()
