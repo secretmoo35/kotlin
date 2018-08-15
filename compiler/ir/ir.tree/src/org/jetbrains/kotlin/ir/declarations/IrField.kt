@@ -12,7 +12,7 @@ import org.jetbrains.kotlin.ir.symbols.IrFieldSymbol
 import org.jetbrains.kotlin.ir.types.IrType
 import org.jetbrains.kotlin.name.Name
 
-interface IrField : IrSymbolDeclaration<IrFieldSymbol> {
+interface IrField : IrSymbolDeclaration<IrFieldSymbol>, IrOverridableDeclaration<IrFieldSymbol> {
     override val descriptor: PropertyDescriptor
 
     val name: Name

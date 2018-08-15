@@ -39,3 +39,7 @@ interface IrDeclaration : IrStatement, IrAnnotationContainer {
 interface IrSymbolDeclaration<out S : IrSymbol> : IrDeclaration, IrSymbolOwner {
     override val symbol: S
 }
+
+interface IrOverridableDeclaration<S : IrSymbol> : IrDeclaration {
+    val overriddenSymbols: MutableList<S>
+}
