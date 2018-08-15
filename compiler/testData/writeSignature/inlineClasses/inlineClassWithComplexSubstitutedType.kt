@@ -21,4 +21,4 @@ object Test {
 
 // method: Test::withInnerGenericInlineClass
 // jvm signature: (Ljava/util/List;)V
-// generic signature: (Ljava/util/List<LAsList<Ljava/util/List<Ljava/lang/Integer;>;>;>;)V
+// generic signature: (Ljava/util/List<LAsList<Ljava/util/List<LUInt;>;>;>;)V
