@@ -165,7 +165,7 @@ object TypeIntrinsics {
 
     private val KOTLIN_FUNCTION_INTERFACE_REGEX = Regex("^kotlin\\.Function([0-9]+)$")
     // TODO: move to correct package
-    private val KOTLIN_SUSPEND_FUNCTION_INTERFACE_REGEX = Regex("^kotlin\\.SuspendFunction([0-9]+)$")
+    private val KOTLIN_SUSPEND_FUNCTION_INTERFACE_REGEX = Regex("^kotlin\\.coroutines\\.SuspendFunction([0-9]+)$")
 
     /**
      * @return function type arity (non-negative), or -1 if the given type is not a function type
