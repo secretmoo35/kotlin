@@ -1,17 +1,6 @@
 /*
- * Copyright 2010-2017 JetBrains s.r.o.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Copyright 2010-2018 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license
+ * that can be found in the license/LICENSE.txt file.
  */
 
 package org.jetbrains.kotlin.builtins;
@@ -22,7 +11,7 @@ import kotlin.jvm.functions.Function1;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.kotlin.builtins.functions.BuiltInFictitiousFunctionClassFactory;
-import org.jetbrains.kotlin.builtins.functions.FunctionClassDescriptor;
+import org.jetbrains.kotlin.builtins.functions.CoroutinesFictitiousPackage;
 import org.jetbrains.kotlin.descriptors.*;
 import org.jetbrains.kotlin.descriptors.annotations.AnnotationUseSiteTarget;
 import org.jetbrains.kotlin.descriptors.annotations.Annotations;
@@ -77,7 +66,7 @@ public abstract class KotlinBuiltIns {
     private final MemoizedFunctionToNotNull<ModuleDescriptor, UnsignedPrimitives> unsignedPrimitives;
     private final NotNullLazyValue<PackageFragments> packageFragments;
 
-    private final MemoizedFunctionToNotNull<Integer, ClassDescriptor> suspendFunctionClasses;
+    private final MemoizedFunctionToNotNull<Name, ClassDescriptor> suspendFunctionClasses;
     private final MemoizedFunctionToNotNull<Name, ClassDescriptor> builtInClassesByName;
 
     private final StorageManager storageManager;
@@ -85,7 +74,7 @@ public abstract class KotlinBuiltIns {
     public static final FqNames FQ_NAMES = new FqNames();
     public static final Name BUILTINS_MODULE_NAME = Name.special("<built-ins module>");
 
-    protected KotlinBuiltIns(@NotNull StorageManager storageManager) {
+    protected KotlinBuiltIns(@NotNull final StorageManager storageManager) {
         this.storageManager = storageManager;
 
         this.packageFragments = storageManager.createLazyValue(new Function0<PackageFragments>() {
@@ -95,12 +84,13 @@ public abstract class KotlinBuiltIns {
 
                 Map<FqName, PackageFragmentDescriptor> nameToFragment = new LinkedHashMap<FqName, PackageFragmentDescriptor>();
                 PackageFragmentDescriptor kotlin = createPackage(provider, nameToFragment, BUILT_INS_PACKAGE_FQ_NAME);
+                PackageFragmentDescriptor kotlinCoroutines = new CoroutinesFictitiousPackage(storageManager, builtInsModule);
                 PackageFragmentDescriptor kotlinCollections = createPackage(provider, nameToFragment, COLLECTIONS_PACKAGE_FQ_NAME);
                 createPackage(provider, nameToFragment, RANGES_PACKAGE_FQ_NAME);
                 PackageFragmentDescriptor kotlinAnnotation = createPackage(provider, nameToFragment, ANNOTATION_PACKAGE_FQ_NAME);
                 Set<PackageFragmentDescriptor> allImportedByDefault = new LinkedHashSet<PackageFragmentDescriptor>(nameToFragment.values());
 
-                return new PackageFragments(kotlin, kotlinCollections, kotlinAnnotation, allImportedByDefault);
+                return new PackageFragments(kotlin, kotlinCoroutines, kotlinCollections, kotlinAnnotation, allImportedByDefault);
             }
         });
 
@@ -147,15 +137,10 @@ public abstract class KotlinBuiltIns {
             }
         });
 
-        this.suspendFunctionClasses = storageManager.createMemoizedFunction(new Function1<Integer, ClassDescriptor>() {
+        this.suspendFunctionClasses = storageManager.createMemoizedFunction(new Function1<Name, ClassDescriptor>() {
             @Override
-            public ClassDescriptor invoke(Integer arity) {
-                return new FunctionClassDescriptor(
-                        getStorageManager(),
-                        packageFragments.invoke().builtInsPackageFragment,
-                        FunctionClassDescriptor.Kind.SuspendFunction,
-                        arity
-                );
+            public ClassDescriptor invoke(Name name) {
+                return (ClassDescriptor) packageFragments.invoke().coroutinesPackageFragment.getMemberScope().getContributedClassifier(name, NoLookupLocation.FROM_BUILTINS);
             }
         });
 
@@ -278,17 +263,20 @@ public abstract class KotlinBuiltIns {
 
     private static class PackageFragments {
         public final PackageFragmentDescriptor builtInsPackageFragment;
+        public final PackageFragmentDescriptor coroutinesPackageFragment;
         public final PackageFragmentDescriptor collectionsPackageFragment;
         public final PackageFragmentDescriptor annotationPackageFragment;
         public final Set<PackageFragmentDescriptor> allImportedByDefaultBuiltInsPackageFragments;
 
         private PackageFragments(
                 @NotNull PackageFragmentDescriptor builtInsPackageFragment,
+                @NotNull PackageFragmentDescriptor coroutinesPackageFragment,
                 @NotNull PackageFragmentDescriptor collectionsPackageFragment,
                 @NotNull PackageFragmentDescriptor annotationPackageFragment,
                 @NotNull Set<PackageFragmentDescriptor> allImportedByDefaultBuiltInsPackageFragments
         ) {
             this.builtInsPackageFragment = builtInsPackageFragment;
+            this.coroutinesPackageFragment = coroutinesPackageFragment;
             this.collectionsPackageFragment = collectionsPackageFragment;
             this.annotationPackageFragment = annotationPackageFragment;
             this.allImportedByDefaultBuiltInsPackageFragments = allImportedByDefaultBuiltInsPackageFragments;
@@ -607,6 +595,11 @@ public abstract class KotlinBuiltIns {
     }
 
     @NotNull
+    public static String getSuspendFunctionName(int parameterCount) {
+        return "SuspendFunction" + parameterCount;
+    }
+
+    @NotNull
     public static ClassId getFunctionClassId(int parameterCount) {
         return new ClassId(BUILT_INS_PACKAGE_FQ_NAME, Name.identifier(getFunctionName(parameterCount)));
     }
@@ -619,7 +612,7 @@ public abstract class KotlinBuiltIns {
     @NotNull
     public ClassDescriptor getSuspendFunction(int parameterCount) {
         // SuspendFunction$n is not visible through member scope, and is created independently.
-        return suspendFunctionClasses.invoke(parameterCount);
+        return suspendFunctionClasses.invoke(Name.identifier(getSuspendFunctionName(parameterCount)));
     }
 
     @NotNull
