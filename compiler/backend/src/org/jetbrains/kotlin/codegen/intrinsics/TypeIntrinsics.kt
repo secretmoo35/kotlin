@@ -38,7 +38,7 @@ object TypeIntrinsics {
                     dup()
                     instanceOf(AsmTypes.SUSPEND_FUNCTION_TYPE)
                     ifeq(notSuspendLambda)
-                    iconst(suspendFunctionTypeArity)
+                    iconst(suspendFunctionTypeArity + 1)
                     typeIntrinsic(IS_FUNCTON_OF_ARITY_METHOD_NAME, IS_FUNCTON_OF_ARITY_DESCRIPTOR)
                     goTo(end)
 
@@ -170,20 +170,19 @@ object TypeIntrinsics {
     /**
      * @return function type arity (non-negative), or -1 if the given type is not a function type
      */
-    private fun getFunctionTypeArity(jetType: KotlinType): Int {
-        val classFqName = getClassFqName(jetType) ?: return -1
-        val match = KOTLIN_FUNCTION_INTERFACE_REGEX.find(classFqName.asString()) ?: return -1
+    private fun getFunctionTypeArity(kotlinType: KotlinType): Int = getFunctionTypeArityByRegex(kotlinType, KOTLIN_FUNCTION_INTERFACE_REGEX)
+
+    private fun getFunctionTypeArityByRegex(kotlinType: KotlinType, regex: Regex): Int {
+        val classFqName = getClassFqName(kotlinType) ?: return -1
+        val match = regex.find(classFqName.asString()) ?: return -1
         return Integer.valueOf(match.groups[1]!!.value)
     }
 
     /**
      * @return function type arity (non-negative, counting continuation), or -1 if the given type is not a function type
      */
-    private fun getSuspendFunctionTypeArity(jetType: KotlinType): Int {
-        val classFqName = getClassFqName(jetType) ?: return -1
-        val match = KOTLIN_SUSPEND_FUNCTION_INTERFACE_REGEX.find(classFqName.asString()) ?: return -1
-        return Integer.valueOf(match.groups[1]!!.value) + 1
-    }
+    private fun getSuspendFunctionTypeArity(kotlinType: KotlinType): Int =
+        getFunctionTypeArityByRegex(kotlinType, KOTLIN_SUSPEND_FUNCTION_INTERFACE_REGEX)
 
     private fun typeIntrinsicNode(methodName: String, methodDescriptor: String): MethodInsnNode =
             MethodInsnNode(Opcodes.INVOKESTATIC, INTRINSICS_CLASS, methodName, methodDescriptor, false)

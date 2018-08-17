@@ -6,7 +6,6 @@
 package org.jetbrains.kotlin.codegen
 
 import org.jetbrains.kotlin.builtins.createFunctionType
-import org.jetbrains.kotlin.codegen.coroutines.SUSPEND_FUNCTION_FQ_NAME
 import org.jetbrains.kotlin.codegen.coroutines.coroutinesJvmInternalPackageFqName
 import org.jetbrains.kotlin.codegen.coroutines.getOrCreateJvmSuspendFunctionView
 import org.jetbrains.kotlin.codegen.coroutines.isSuspendLambdaOrLocalFunction
@@ -19,15 +18,12 @@ import org.jetbrains.kotlin.descriptors.impl.AnonymousFunctionDescriptor
 import org.jetbrains.kotlin.descriptors.impl.LocalVariableDescriptor
 import org.jetbrains.kotlin.descriptors.impl.MutableClassDescriptor
 import org.jetbrains.kotlin.descriptors.impl.MutablePackageFragmentDescriptor
-import org.jetbrains.kotlin.incremental.components.NoLookupLocation
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.resolve.calls.checkers.isRestrictsSuspensionReceiver
 import org.jetbrains.kotlin.resolve.descriptorUtil.builtIns
-import org.jetbrains.kotlin.resolve.descriptorUtil.module
 import org.jetbrains.kotlin.storage.LockBasedStorageManager
 import org.jetbrains.kotlin.types.KotlinType
-import org.jetbrains.kotlin.utils.sure
 
 class JvmRuntimeTypes(module: ModuleDescriptor, private val languageVersionSettings: LanguageVersionSettings) {
     private val kotlinJvmInternalPackage = MutablePackageFragmentDescriptor(module, FqName("kotlin.jvm.internal"))
@@ -59,6 +55,12 @@ class JvmRuntimeTypes(module: ModuleDescriptor, private val languageVersionSetti
 
     private val restrictedSuspendLambda by lazy {
         createCoroutineSuperClass("RestrictedSuspendLambda")
+    }
+
+    private val suspendFunctionInterface by lazy {
+        if (languageVersionSettings.isReleaseCoroutines())
+            createClass(kotlinCoroutinesJvmInternalPackage, "SuspendFunction", ClassKind.INTERFACE)
+        else null
     }
 
     private fun createCoroutineSuperClass(className: String): ClassDescriptor {
@@ -149,12 +151,8 @@ class JvmRuntimeTypes(module: ModuleDescriptor, private val languageVersionSetti
             referencedFunction.isSuspend
         )
 
-        val suspendFunctionInterface = if (referencedFunction.isSuspend && languageVersionSettings.isReleaseCoroutines())
-            referencedFunction.module.resolveClassByFqName(SUSPEND_FUNCTION_FQ_NAME, NoLookupLocation.FROM_BUILTINS)
-                .sure { "$SUSPEND_FUNCTION_FQ_NAME is not found" }.defaultType
-        else null
-
-        return listOfNotNull(functionReference.defaultType, functionType, suspendFunctionInterface)
+        val suspendFunctionType = if (referencedFunction.isSuspend) suspendFunctionInterface?.defaultType else null
+        return listOfNotNull(functionReference.defaultType, functionType, suspendFunctionType)
     }
 
     fun getSupertypeForPropertyReference(descriptor: VariableDescriptorWithAccessors, isMutable: Boolean, isBound: Boolean): KotlinType {
