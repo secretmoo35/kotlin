@@ -42,6 +42,7 @@ private fun collectSignatureForMangling(types: List<KotlinType>): String {
                 sb.append(';')
             }
         }
+        if (type.isMarkedNullable) sb.append('?')
     }
     return sb.toString()
 }
