@@ -28,9 +28,19 @@ internal open class InspectClassesForMultiModuleIC : DefaultTask() {
     @Suppress("MemberVisibilityCanBePrivate")
     @get:InputFiles
     internal val classFiles: FileCollection
-        get() = project.convention.findPlugin(JavaPluginConvention::class.java)?.let {
-            it.sourceSets.findByName(sourceSetName)?.output?.asFileTree?.filter { it.isClassFile() }
-        } ?: project.files()
+        get() {
+            val convention = project.convention.findPlugin(JavaPluginConvention::class.java)
+            val sourceSet = convention?.sourceSets?.findByName(sourceSetName) ?: return project.files()
+
+            // todo: remove when Gradle < 4.0 is not supported
+            return if (sourceSet.output.javaClass.methods.any { it.name == "getClassesDirs" && it.parameterCount == 0 }) {
+                val fileTrees = sourceSet.output.classesDirs.map { project.fileTree(it).include("**/*.class") }
+                project.files(fileTrees)
+            } else {
+                sourceSet.output.asFileTree.filter { it.isClassFile() }
+            }
+
+        }
 
     @get:Input
     internal val archivePath: String
