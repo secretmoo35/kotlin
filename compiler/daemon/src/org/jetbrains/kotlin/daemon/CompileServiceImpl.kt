@@ -508,7 +508,7 @@ class CompileServiceImpl(
             it.getJavaSourceRoots().map { JvmSourceRoot(File(it.path), it.packagePrefix) }
         }
 
-        val commonSourceFiles = parsedModule.modules.flatMap { it.getCommonSourceFiles().map(::File) }
+        k2jvmArgs.commonSources = parsedModule.modules.flatMap { it.getCommonSourceFiles() }.toTypedArray().takeUnless { it.isEmpty() }
 
         val allKotlinFiles = parsedModule.modules.flatMap { it.getSourceFiles().map(::File) }
         k2jvmArgs.friendPaths = parsedModule.modules.flatMap(Module::getFriendPaths).toTypedArray()
@@ -537,7 +537,6 @@ class CompileServiceImpl(
 
         val compiler = IncrementalJvmCompilerRunner(
             workingDir,
-            commonSourceFiles,
             javaSourceRoots,
             versions,
             reporter,
