@@ -6,7 +6,6 @@
 package org.jetbrains.kotlin.builtins.jvm
 
 import org.jetbrains.kotlin.builtins.functions.BuiltInFictitiousFunctionClassFactory
-import org.jetbrains.kotlin.builtins.functions.CoroutinesFictitiousPackage
 import org.jetbrains.kotlin.descriptors.ModuleDescriptor
 import org.jetbrains.kotlin.descriptors.NotFoundClasses
 import org.jetbrains.kotlin.descriptors.deserialization.AdditionalClassPartsProvider
@@ -14,8 +13,6 @@ import org.jetbrains.kotlin.descriptors.deserialization.PlatformDependentDeclara
 import org.jetbrains.kotlin.incremental.components.LookupTracker
 import org.jetbrains.kotlin.load.kotlin.KotlinClassFinder
 import org.jetbrains.kotlin.name.FqName
-import org.jetbrains.kotlin.resolve.DescriptorUtils
-import org.jetbrains.kotlin.resolve.scopes.MemberScope
 import org.jetbrains.kotlin.serialization.deserialization.*
 import org.jetbrains.kotlin.serialization.deserialization.builtins.BuiltInSerializerProtocol
 import org.jetbrains.kotlin.serialization.deserialization.builtins.BuiltInsPackageFragmentImpl
@@ -53,26 +50,8 @@ class JvmBuiltInsPackageFragmentProvider(
     }
 
     override fun findPackage(fqName: FqName): DeserializedPackageFragment? {
-        if (fqName == DescriptorUtils.COROUTINES_PACKAGE_FQ_NAME_RELEASE) {
-            return CoroutinesFictitiousDeserializerPackageFragment(storageManager, moduleDescriptor)
-        }
         return finder.findBuiltInsData(fqName)?.let { inputStream ->
             BuiltInsPackageFragmentImpl.create(fqName, storageManager, moduleDescriptor, inputStream)
         }
     }
-}
-
-class CoroutinesFictitiousDeserializerPackageFragment(storageManager: StorageManager, moduleDescriptor: ModuleDescriptor):
-    DeserializedPackageFragment(DescriptorUtils.COROUTINES_PACKAGE_FQ_NAME_RELEASE, storageManager, moduleDescriptor) {
-    override fun initialize(components: DeserializationComponents) {
-    }
-
-    override val classDataFinder: ClassDataFinder
-        get() = ClassDataFinder { null }
-
-    override fun getMemberScope(): MemberScope {
-        return packageFragment.getMemberScope()
-    }
-
-    private val packageFragment = CoroutinesFictitiousPackage(storageManager, moduleDescriptor)
 }
